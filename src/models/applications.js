@@ -1,42 +1,44 @@
 import { Sequelize } from "sequelize";
 
-const Interviews = (sequelize) => {
+const Applications = (sequelize) => {
 
-    return sequelize.define("interviews", {
+    return sequelize.define("applications", {
 
         id: {
             type: Sequelize.INTEGER,
             primaryKey: true,
             autoIncrement: true,
         },
-
-        applicationId: {
+        candidateId: {
             type: Sequelize.INTEGER,
             allowNull: false,
         },
-
+        jobId: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+        },
         status: {
             type: Sequelize.ENUM(
-                "started",
-                "completed"
+                "applied",
+                "shortlisted",
+                "rejected",
+                "interview",
+                "selected"
             ),
-            defaultValue: "started",
+            defaultValue: "applied",
         },
-
-        finalScore: {
+        aiMatchScore: {
             type: Sequelize.INTEGER,
             allowNull: true,
         },
-
-        feedback: {
+        aiFeedback: {
             type: Sequelize.TEXT,
             allowNull: true,
         },
-
     }, {
         timestamps: true,
     });
 
 };
 
-export default Interviews;
+export default Applications;

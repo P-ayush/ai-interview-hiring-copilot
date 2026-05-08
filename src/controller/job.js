@@ -1,4 +1,5 @@
 import db from '../models/index.js'
+import { matchResumeToJob } from '../service/ai.js'
 export const createJob = async (req, res) => {
     try {
         const { title, description, experienceLevel, skills } = req.body
@@ -79,3 +80,52 @@ export const deleteJob = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+export const applyForJob = async (req, res) => {
+    try {
+        const job = await db.Jobs.findOne({ where: { id: req.params.id } })
+        if (!job) {
+            return res.status(404).json({ success: false, message: "Job not found" });
+        }
+        const candidate = await db.Candidates.findOne({ where: { userId: req.user.id } })
+        if (!candidate) {
+            return res.status(404).json({ success: false, message: "Candidate not found" });
+        }
+        if (!candidate.resumeUrl) {
+            return res.status(400).json({
+                success: false,
+                message: "Resume is required to apply",
+            });
+        }
+        const existingApplication =
+            await db.Applications.findOne({
+
+                where: {
+                    jobId: job.id,
+                    candidateId: candidate.id,
+                },
+
+            });
+
+        if (existingApplication) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Already applied to this job",
+            });
+
+        }
+        const aiData = await matchResumeToJob(
+            candidate.extractedText,
+            job.description
+        );
+        const application = await db.Applications.create({
+            jobId: job.id,
+            candidateId: candidate.id,
+            aiMatchScore: aiData.matchScore,
+            aiFeedback: aiData.feedback
+        })
+        return res.status(200).json({ success: true, message: "Job applied successfully" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+}
