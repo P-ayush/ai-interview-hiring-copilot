@@ -129,3 +129,30 @@ export const applyForJob = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message })
     }
 }
+
+export const getApplicants = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const job = await db.Jobs.findOne({ where: { id: req.params.jobId } })
+        if (!job) {
+            return res.status(404).json({ success: false, message: "Job not found" })
+        }
+        const { count, rows } = await db.Applications.findAndCountAll({
+            where: { jobId: job.id },
+            limit,
+            offset: (page - 1) * limit,
+            order: [["createdAt", "DESC"]],
+        })
+        return res.status(200).json({
+            success: true,
+            message: "Applicants fetched successfully",
+            totalApplicants: count,
+            currentPage: page,
+            totalPages: Math.ceil(count / limit),
+            applications: rows,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+}
