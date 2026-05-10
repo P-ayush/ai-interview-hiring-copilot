@@ -81,7 +81,7 @@ export const matchResumeToJob = async (
 
         const response =
             result.candidates[0]
-            .content.parts[0].text;
+                .content.parts[0].text;
 
         const cleanedResponse = response
             .replace(/```json/g, "")
@@ -92,4 +92,140 @@ export const matchResumeToJob = async (
         console.log(error);
         throw new Error("AI job match failed");
     }
+};
+
+export const generateInterviewQuestion = async (
+    resumeText,
+    jobDescription,
+    previousMessages = []
+) => {
+    try {
+        const formattedConversation =
+            previousMessages
+                .map(
+                    (msg) =>
+                        `${msg.sender}: ${msg.message}`
+                )
+                .join("\n");
+
+        const prompt = `
+        You are an AI technical interviewer.
+
+        Your task:
+        - Ask one technical interview question at a time
+        - Questions should be based on:
+          - candidate resume
+          - job description
+          - previous conversation
+        - Keep questions concise
+        - Increase difficulty gradually
+        - Do not ask multiple questions together
+        - Return ONLY valid JSON
+        - Do not include markdown or \`\`\`
+
+        Required JSON format:
+
+        {
+          "question": "technical interview question"
+        }
+
+        Candidate Resume:
+        ${resumeText}
+
+        Job Description:
+        ${jobDescription}
+
+        Previous Conversation:
+        ${formattedConversation}
+        `;
+        const result =
+            await genAI.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+            });
+        const response =
+            result.candidates[0]
+                .content.parts[0].text;
+        const cleanedResponse = response
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+        return JSON.parse(cleanedResponse);
+    } catch (error) {
+        console.log(error);
+        throw new Error(
+            "AI interview question generation failed"
+        );
+
+    }
+};
+export const generateInterviewFeedback = async (
+    resumeText,
+    jobDescription,
+    interviewMessages = []
+) => {
+    try {
+        const formattedConversation =
+            interviewMessages
+                .map(
+                    (msg) =>
+                        `${msg.sender}: ${msg.message}`
+                )
+                .join("\n");
+
+        const prompt = `
+        You are an AI technical interviewer.
+
+        Analyze the interview conversation and evaluate the candidate.
+
+        Evaluation criteria:
+        - Technical knowledge
+        - Communication clarity
+        - Problem solving
+        - Backend development understanding
+        - Relevance to job description
+
+        Rules:
+        - Return ONLY valid JSON
+        - Do not include markdown
+        - Do not include \`\`\`
+        - Score must be between 0 and 100
+        - Keep feedback concise
+
+        Required JSON format:
+
+        {
+          "score": 85,
+          "feedback": "short professional interview feedback"
+        }
+
+        Candidate Resume:
+        ${resumeText}
+
+        Job Description:
+        ${jobDescription}
+
+        Interview Conversation:
+        ${formattedConversation}
+        `;
+        const result =
+            await genAI.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+            });
+        const response =
+            result.candidates[0]
+                .content.parts[0].text;
+        const cleanedResponse = response
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+        return JSON.parse(cleanedResponse);
+    } catch (error) {
+        console.log(error);
+        throw new Error(
+            "AI interview evaluation failed"
+        );
+    }
+
 };
