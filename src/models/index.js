@@ -18,6 +18,85 @@ const db = {
     Applications: Applications(sequelize),
 };
 
+db.Users.hasOne(db.Candidates, {
+    foreignKey: "userId",
+});
+
+db.Candidates.belongsTo(db.Users, {
+    foreignKey: "userId",
+});
+
+db.Users.hasMany(db.Jobs, {
+    foreignKey: "recruiterId",
+});
+
+db.Jobs.belongsTo(db.Users, {
+    foreignKey: "recruiterId",
+});
+
+db.Candidates.hasMany(
+    db.Applications,
+    {
+        foreignKey: "candidateId",
+    }
+);
+
+db.Applications.belongsTo(
+    db.Candidates,
+    {
+        foreignKey: "candidateId",
+    }
+);
+db.Jobs.hasMany(db.Applications, {
+    foreignKey: "jobId",
+});
+
+db.Applications.belongsTo(db.Jobs, {
+    foreignKey: "jobId",
+});
+
+db.Applications.hasOne(
+    db.Interviews,
+    {
+        foreignKey: "applicationId",
+    }
+);
+
+db.Interviews.belongsTo(
+    db.Applications,
+    {
+        foreignKey: "applicationId",
+    }
+);
+
+db.Interviews.hasMany(
+    db.InterviewMessages,
+    {
+        foreignKey: "interviewId",
+    }
+);
+
+db.InterviewMessages.belongsTo(
+    db.Interviews,
+    {
+        foreignKey: "interviewId",
+    }
+);
+
+db.Interviews.hasMany(
+    db.Assignments,
+    {
+        foreignKey: "interviewId",
+    }
+);
+
+db.Assignments.belongsTo(
+    db.Interviews,
+    {
+        foreignKey: "interviewId",
+    }
+);
+
 db.sequelize = sequelize;
 
 export default db;
