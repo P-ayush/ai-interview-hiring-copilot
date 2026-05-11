@@ -1,0 +1,173 @@
+import db from "../models/index.js";
+import jwt from "jsonwebtoken";
+import {
+    generateInterviewQuestion
+} from "../service/ai.js";
+
+export const interviewSocket = (io) => {
+    io.use(
+        async (socket, next) => {
+            try {
+                const token =
+                    socket.handshake.query.token;
+                if (!token) {
+                    return next(
+                        new Error(
+                            "Authentication error"
+                        )
+                    );
+                }
+                const decoded =
+                    jwt.verify(
+                        token,
+                        process.env.JWT_SECRET
+                    );
+                socket.user = decoded;
+                next();
+            } catch (error) {
+                next(
+                    new Error(
+                        "Authentication error"
+                    )
+                );
+            }
+        }
+    );
+    io.on("connection", (socket) => {
+
+        console.log(
+            "User connected:",
+            socket.id
+        );
+
+
+        socket.on(
+            "join_interview",
+            (interviewId) => {
+
+                socket.join(
+                    `interview_${interviewId}`
+                );
+
+                console.log(
+                    `User joined interview_${interviewId}`
+                );
+
+            }
+        );
+
+
+        socket.on(
+            "send_message",
+
+            async (data) => {
+                data = JSON.parse(data);
+                try {
+
+                    const interview =
+                        await db.Interviews.findOne({
+                            where: {
+                                id:
+                                    data.interviewId,
+                            },
+                            include: [
+                                {
+                                    model:
+                                        db.Applications,
+                                    required: true,
+                                    include: [
+                                        {
+                                            model:
+                                                db.Jobs,
+                                        },
+                                        {
+                                            model:
+                                                db.Candidates,
+                                        },
+                                    ],
+                                },
+                            ],
+                        });
+                    if (!interview) {
+                        return socket.emit(
+                            "error_message",
+                            {
+                                message:
+                                    "Interview not found",
+                            }
+                        );
+                    }
+                    await db.InterviewMessages.create({
+                        interviewId:
+                            interview.id,
+                        sender:
+                            "candidate",
+                        message:
+                            data.message,
+                    });
+                    const previousMessages =
+                        await db.InterviewMessages.findAll({
+                            where: {
+                                interviewId:
+                                    interview.id,
+                            },
+                            order: [
+                                ["createdAt", "ASC"]
+                            ],
+                        });
+                    const aiResponse =
+                        await generateInterviewQuestion(
+                            interview.application
+                                .candidate
+                                .extractedText,
+                            interview.application
+                                .job
+                                .description,
+                            previousMessages
+                        );
+                    const aiMessage =
+                        await db.InterviewMessages.create({
+                            interviewId:
+                                interview.id,
+                            sender:
+                                "ai",
+                            message:
+                                aiResponse.question,
+
+                        });
+
+                    io.to(
+                        `interview_${data.interviewId}`
+                    ).emit(
+                        "receive_message",
+                        {
+                            sender: "ai",
+                            message:
+                                aiMessage.message,
+                        }
+                    );
+                } catch (error) {
+                    console.log(error);
+                    socket.emit(
+                        "error_message",
+                        {
+                            message:
+                                error.message,
+                        }
+                    );
+                }
+            }
+        );
+
+        socket.on(
+            "disconnect",
+            () => {
+                console.log(
+                    "User disconnected:",
+                    socket.id
+                );
+            }
+        );
+    });
+
+};
