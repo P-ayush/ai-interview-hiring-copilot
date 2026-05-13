@@ -96,7 +96,7 @@ export const interviewSocket = (io) => {
                             }
                         );
                     }
-                    await db.InterviewMessages.create({
+                    const candidateMessage = await db.InterviewMessages.create({
                         interviewId:
                             interview.id,
                         sender:
@@ -104,6 +104,17 @@ export const interviewSocket = (io) => {
                         message:
                             data.message,
                     });
+                    io.to(
+                        `interview_${data.interviewId}`
+                    ).emit(
+                        "receive_message",
+                        {
+                            sender:
+                                "candidate",
+                            message:
+                                candidateMessage.message,
+                        }
+                    );
                     const previousMessages =
                         await db.InterviewMessages.findAll({
                             where: {
