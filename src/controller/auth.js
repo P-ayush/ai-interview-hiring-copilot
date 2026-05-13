@@ -29,12 +29,12 @@ export const login = async (req, res) => {
         }
         const isPasswordValid = await comparePassword(password, user.password);
         if (!isPasswordValid) {
-            res.status(401).json({ message: "Invalid credentials" });
+            return res.status(401).json({ message: "Invalid credentials" });
         }
         const token = generateToken({ id: user.id, email: user.email, role: user.role });
         delete user.dataValues.password;
-        res.status(200).json({ message: "Login successful", user, token });
+        return res.status(200).json({ message: "Login successful", user, token });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
 }
