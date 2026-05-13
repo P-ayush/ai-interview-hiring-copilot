@@ -61,7 +61,6 @@ export const interviewSocket = (io) => {
             "send_message",
 
             async (data) => {
-                data = JSON.parse(data);
                 try {
 
                     const interview =
