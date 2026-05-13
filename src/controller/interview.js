@@ -55,6 +55,14 @@ export const getRecruiterInterviews = async (req, res) => {
                             },
                             {
                                 model: db.Candidates,
+                                include: [
+                                    {
+                                        model: db.Users,
+                                        attributes: {
+                                            exclude: ["password"],
+                                        },
+                                    },
+                                ],
                             },
                         ],
                     },
