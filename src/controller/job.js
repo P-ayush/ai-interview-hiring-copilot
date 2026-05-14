@@ -156,3 +156,30 @@ export const getApplicants = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message })
     }
 }
+export const getRecruiterJobs = async (req, res) => {
+
+    try {
+        const jobs =
+            await db.Jobs.findAll({
+                where: {
+                    recruiterId:
+                        req.user.id,
+                },
+                order: [
+                    ["createdAt", "DESC"]
+                ],
+            });
+        return res.status(200).json({
+            success: true,
+            message:
+                "Recruiter jobs fetched successfully",
+            jobs,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message:
+                error.message,
+        });
+    }
+};
