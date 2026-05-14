@@ -8,10 +8,10 @@ import { startInterview, getRecruiterInterviews, getCandidateInterviews, sendMes
 
 router.post("/start", authenticateToken, recruiterOnly, validate(startInterviewSchema), startInterview);
 router.post("/:id/message", authenticateToken, validate(sendMessageSchema), sendMessage);
-router.get("/:id", authenticateToken, getInterview);
 router.get("/:id/messages", authenticateToken, getInterviewMessage);
-router.patch("/:id/status", authenticateToken, recruiterOnly, updateStatus);
+router.patch("/:id/status", authenticateToken, updateStatus);
 router.get("/recruiter", authenticateToken, recruiterOnly, getRecruiterInterviews);
 router.get("/candidate", authenticateToken, getCandidateInterviews);
+router.get("/:id", authenticateToken, getInterview);
 
 export default router;
