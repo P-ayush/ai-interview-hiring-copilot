@@ -263,3 +263,42 @@ export const getCandidateInterviews = async (req, res) => {
         });
     }
 };
+export const getInterview = async (req, res) => {
+    try {
+        const interview =
+            await db.Interviews.findAll({
+                where: { id: req.params.id },
+                include: [
+                    {
+                        model: db.Applications,
+                        include: [
+                            {
+                                model: db.Jobs,
+                               
+                            },
+                            {
+                                model: db.Candidates,
+                                include: [
+                                    {
+                                        model: db.Users,
+                                        attributes: {
+                                            exclude: ["password"],
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+                order: [
+                    ["createdAt", "DESC"]
+                ],
+            });
+        if (!interview) {
+            return res.status(404).json({ success: false, message: "Interview not found" });
+        }
+        return res.status(200).json({ success: true, message: "Interview fetched successfully", interview });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message })
+    }
+}
