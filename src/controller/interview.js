@@ -266,7 +266,7 @@ export const getCandidateInterviews = async (req, res) => {
 export const getInterview = async (req, res) => {
     try {
         const interview =
-            await db.Interviews.findAll({
+            await db.Interviews.findOne({
                 where: { id: req.params.id },
                 include: [
                     {
