@@ -7,10 +7,10 @@ import db from "./models/index.js";
 import routes from "./routes/index.js";
 import { interviewSocket } from "./socket/interviewSocket.js";
 const app = express();
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 routes(app);
 const server = http.createServer(app);
 const io = new Server(server, {
