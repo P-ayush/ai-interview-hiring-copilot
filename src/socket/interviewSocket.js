@@ -43,15 +43,32 @@ export const interviewSocket = (io) => {
 
         socket.on(
             "join_interview",
-            (interviewId) => {
-
+            async (interviewId) => {
+                const interview =
+                    await db.Interviews.findByPk(
+                        interviewId
+                    );
+                if (!interview) {
+                    return socket.emit(
+                        "error_message",
+                        {
+                            message:
+                                "Interview not found",
+                        }
+                    );
+                }
+                if (
+                    interview.status ===
+                    "completed"
+                ) {
+                    return socket.emit(
+                        "interview_completed"
+                    );
+                }
                 socket.join(
                     `interview_${interviewId}`
                 );
 
-                console.log(
-                    `User joined interview_${interviewId}`
-                );
 
             }
         );
@@ -96,6 +113,19 @@ export const interviewSocket = (io) => {
                             }
                         );
                     }
+                    if (
+                        interview.status ===
+                        "completed"
+                    ) {
+
+                        return socket.emit(
+                            "error_message",
+                            "Interview already completed"
+                        );
+
+                    }
+
+
                     const candidateMessage = await db.InterviewMessages.create({
                         interviewId:
                             interview.id,
