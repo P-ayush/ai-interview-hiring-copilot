@@ -265,16 +265,21 @@ export const getCandidateInterviews = async (req, res) => {
 };
 export const getInterview = async (req, res) => {
     try {
+        const page = Math.max(parseInt(req.query.page) || 1, 1)
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 10, 1), 100)
+        let offset = (page - 1) * limit
         const interview =
             await db.Interviews.findOne({
                 where: { id: req.params.id },
+                limit,
+                offset,
                 include: [
                     {
                         model: db.Applications,
                         include: [
                             {
                                 model: db.Jobs,
-                               
+
                             },
                             {
                                 model: db.Candidates,
