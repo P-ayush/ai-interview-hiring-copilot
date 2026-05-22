@@ -1,5 +1,7 @@
 import db from "../models/index.js";
+
 import jwt from "jsonwebtoken";
+
 import {
     generateInterviewQuestion
 } from "../service/ai.js";
@@ -31,8 +33,10 @@ export const interviewSocket = (io) => {
                     )
                 );
             }
+
         }
     );
+
     io.on("connection", (socket) => {
 
         console.log(
@@ -43,12 +47,16 @@ export const interviewSocket = (io) => {
 
         socket.on(
             "join_interview",
+
             async (interviewId) => {
+
                 const interview =
                     await db.Interviews.findByPk(
                         interviewId
                     );
+
                 if (!interview) {
+
                     return socket.emit(
                         "error_message",
                         {
@@ -56,19 +64,27 @@ export const interviewSocket = (io) => {
                                 "Interview not found",
                         }
                     );
+
                 }
+
                 if (
                     interview.status ===
                     "completed"
                 ) {
+
                     return socket.emit(
                         "interview_completed"
                     );
+
                 }
+
                 socket.join(
                     `interview_${interviewId}`
                 );
 
+                console.log(
+                    `User joined room interview_${interviewId}`
+                );
 
             }
         );
@@ -78,19 +94,24 @@ export const interviewSocket = (io) => {
             "send_message",
 
             async (data) => {
+
                 try {
 
                     const interview =
                         await db.Interviews.findOne({
+
                             where: {
                                 id:
                                     data.interviewId,
                             },
+
                             include: [
                                 {
                                     model:
                                         db.Applications,
+
                                     required: true,
+
                                     include: [
                                         {
                                             model:
@@ -103,8 +124,10 @@ export const interviewSocket = (io) => {
                                     ],
                                 },
                             ],
+
                         });
                     if (!interview) {
+
                         return socket.emit(
                             "error_message",
                             {
@@ -112,6 +135,7 @@ export const interviewSocket = (io) => {
                                     "Interview not found",
                             }
                         );
+
                     }
                     if (
                         interview.status ===
@@ -125,15 +149,20 @@ export const interviewSocket = (io) => {
 
                     }
 
+                    const candidateMessage =
+                        await db.InterviewMessages.create({
 
-                    const candidateMessage = await db.InterviewMessages.create({
-                        interviewId:
-                            interview.id,
-                        sender:
-                            "candidate",
-                        message:
-                            data.message,
-                    });
+                            interviewId:
+                                interview.id,
+
+                            sender:
+                                "candidate",
+
+                            message:
+                                data.message,
+
+                        });
+
                     io.to(
                         `interview_${data.interviewId}`
                     ).emit(
@@ -141,36 +170,55 @@ export const interviewSocket = (io) => {
                         {
                             sender:
                                 "candidate",
+
                             message:
                                 candidateMessage.message,
                         }
                     );
+
+                    io.to(
+                        `interview_${data.interviewId}`
+                    ).emit(
+                        "ai_typing"
+                    );
+
                     const previousMessages =
                         await db.InterviewMessages.findAll({
+
                             where: {
                                 interviewId:
                                     interview.id,
                             },
+
                             order: [
                                 ["createdAt", "ASC"]
                             ],
+
                         });
                     const aiResponse =
                         await generateInterviewQuestion(
+
                             interview.application
                                 .candidate
                                 .extractedText,
+
                             interview.application
                                 .job
                                 .description,
+
                             previousMessages
+
                         );
+
                     const aiMessage =
                         await db.InterviewMessages.create({
+
                             interviewId:
                                 interview.id,
+
                             sender:
                                 "ai",
+
                             message:
                                 aiResponse.question,
 
@@ -179,15 +227,26 @@ export const interviewSocket = (io) => {
                     io.to(
                         `interview_${data.interviewId}`
                     ).emit(
+                        "ai_stop_typing"
+                    );
+
+                    io.to(
+                        `interview_${data.interviewId}`
+                    ).emit(
                         "receive_message",
                         {
-                            sender: "ai",
+                            sender:
+                                "ai",
+
                             message:
                                 aiMessage.message,
                         }
                     );
+
                 } catch (error) {
+
                     console.log(error);
+
                     socket.emit(
                         "error_message",
                         {
@@ -195,19 +254,25 @@ export const interviewSocket = (io) => {
                                 error.message,
                         }
                     );
+
                 }
+
             }
         );
 
         socket.on(
             "disconnect",
+
             () => {
+
                 console.log(
                     "User disconnected:",
                     socket.id
                 );
+
             }
         );
+
     });
 
 };
